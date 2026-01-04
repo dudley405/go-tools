@@ -2,11 +2,11 @@ package main
 
 import (
 	"io"
-    "log"
     "net/http"
     "encoding/json"
     "app/types"
     "app/logging"
+    "go.uber.org/zap"
 )
 
 
@@ -19,34 +19,18 @@ import (
 func main() {
     var logger = logging.NewLogger()
 
-    resource_type := "pods"
-    resp, err := http.Get("http://127.0.0.1:8080/api/v1/" + resource_type)
-    if err != nil {
-        log.Fatalln(err)
-    }
-
-    body, err := io.ReadAll(resp.Body)
-    if err != nil {
-        log.Fatalln(err)
-    }
-
-
-    var data types.KubeResponse
-
-    if err := json.Unmarshal(body, &data); err != nil {
-        panic(err)
-    }
+    resourceType := "services"
+    body, err := requestApiResources(resourceType, logger)
 
     results := make([]string, 0)
 
-    for _, item := range data.Items {
+    for _, item := range body.Items {
         results = append(results, item.Metadata.Name)
     }
 
-
     response := make(map[string]interface{})
 
-    response[resource_type] = results
+    response[resourceType] = results
 
     json, err := json.Marshal(response)
         if err != nil {
@@ -55,4 +39,32 @@ func main() {
 
     buffer := string(json)
     logger.Info(buffer)
+}
+
+func requestApiResources(resourceType string, logger *zap.Logger) (response types.KubeResponse, err error) {
+     request := string("http://127.0.0.1:8080/api/v1/" + resourceType)
+     resp, err := http.Get(request)
+
+     if err != nil {
+        logger.Error("Error fetching Kubernetes API",
+            zap.String("request", request),
+            zap.Error(err))
+     }
+
+
+     body, err := io.ReadAll(resp.Body)
+     if err != nil {
+        logger.Error("Error reading Kubernetes API response",
+            zap.String("request", request),
+            zap.Error(err))
+     }
+
+    var data types.KubeResponse
+
+    if err := json.Unmarshal(body, &data); err != nil {
+        panic(err)
+    }
+
+    return data, err
+
 }
