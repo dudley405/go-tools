@@ -11,9 +11,6 @@ import (
     "fmt"
 )
 
-
-
-    // A separate handler function with the required signature
 func ApiResourceHandler(w http.ResponseWriter, r *http.Request) {
     var logger = logging.NewLogger()
     resourceType := strings.TrimPrefix(r.URL.Path, "/api/v1/resources/")
