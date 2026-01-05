@@ -1,12 +1,11 @@
 package main
 
 import (
-	"io"
+
+    "app/clients"
+
     "net/http"
-    "encoding/json"
-    "app/types"
-    "app/logging"
-    "go.uber.org/zap"
+    "fmt"
 )
 
 
@@ -17,54 +16,18 @@ import (
 */
 
 func main() {
-    var logger = logging.NewLogger()
 
-    resourceType := "services"
-    body, err := requestApiResources(resourceType, logger)
-
-    results := make([]string, 0)
-
-    for _, item := range body.Items {
-        results = append(results, item.Metadata.Name)
-    }
-
-    response := make(map[string]interface{})
-
-    response[resourceType] = results
-
-    json, err := json.Marshal(response)
-        if err != nil {
-            logger.Error("Failed marshalling json")
-        }
-
-    buffer := string(json)
-    logger.Info(buffer)
+    startServer()
 }
 
-func requestApiResources(resourceType string, logger *zap.Logger) (response types.KubeResponse, err error) {
-     request := string("http://127.0.0.1:8080/api/v1/" + resourceType)
-     resp, err := http.Get(request)
+func startServer() {
 
-     if err != nil {
-        logger.Error("Error fetching Kubernetes API",
-            zap.String("request", request),
-            zap.Error(err))
-     }
+    http.HandleFunc("/api/v1/resources/", clients.ApiResourceHandler)
 
+    fmt.Println("Server starting on port 8081...")
 
-     body, err := io.ReadAll(resp.Body)
-     if err != nil {
-        logger.Error("Error reading Kubernetes API response",
-            zap.String("request", request),
-            zap.Error(err))
-     }
-
-    var data types.KubeResponse
-
-    if err := json.Unmarshal(body, &data); err != nil {
-        panic(err)
+    if err := http.ListenAndServe(":8081", nil); err != nil {
+    	fmt.Printf("Server failed: %v\n", err)
     }
-
-    return data, err
-
 }
+

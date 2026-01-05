@@ -1,4 +1,4 @@
-module app/monitor
+module app/clients
 
 go 1.25.5
 
@@ -9,13 +9,10 @@ replace app/clients => ../clients
 replace app/logging => ../logging
 
 require (
-	app/clients v0.0.0-00010101000000-000000000000
 	app/logging v0.0.0-00010101000000-000000000000
 	app/types v0.0.0-00010101000000-000000000000
 	go.uber.org/zap v1.27.1
+	golang.org/x/net v0.48.0
 )
 
-require (
-	go.uber.org/multierr v1.10.0 // indirect
-	golang.org/x/net v0.48.0 // indirect
-)
+require go.uber.org/multierr v1.10.0 // indirect
