@@ -1,27 +1,43 @@
-package clients
+package main
 
 import (
 	"fmt"
-	"log"
+    "context"
+	"net"
+	"net/http"
+	"io"
+)
 
-	"golang.org/x/net/websocket"
+// kubectl proxy --unix-socket=./proxy.sock --accept-hosts='^.*$'
+var (
+    socketPath = "/home/dudley/proxy.sock"
+    // Creating a new HTTP client that is configured to make HTTP requests over a Unix domain socket.
+    httpClient = http.Client{
+        Transport: &http.Transport{
+            // Set the DialContext field to a function that creates
+            // a new network connection to a Unix domain socket
+            DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
+                return net.Dial("unix", socketPath)
+            },
+        },
+    }
 )
 
 
 func main () {
-    origin := "http://localhost/"
-    url := "ws://localhost:8080"
-    ws, err := websocket.Dial(url, "", origin)
-    if err != nil {
-    	log.Fatal(err)
-    }
-    if _, err := ws.Write([]byte("hello, world!\n")); err != nil {
-    	log.Fatal(err)
-    }
-    var msg = make([]byte, 512)
-    var n int
-    if n, err = ws.Read(msg); err != nil {
-    	log.Fatal(err)
-    }
-    fmt.Printf("Received: %s.\n", msg[:n])
+       resp, err := httpClient.Get("http://unix/api/v1/pods")
+       if err != nil {
+            panic(err)
+       }
+       defer resp.Body.Close()
+
+       b, err := io.ReadAll(resp.Body)
+          if err != nil {
+              fmt.Printf("%s", err)
+          }
+
+       fmt.Printf("%s", resp)
+       fmt.Printf("%s", b)
+
+
 }
